@@ -94,15 +94,14 @@ class HeaderManagerImpl : public HeaderManager {
     s_mutable.remove_prefix(sizeof(uint32_t));
 
     // 5. Decrypt the resulting data key.
-    auto decrypted_data_key = static_cast<uint8_t*>(
-        EncryptionBuffer::Get()->GetBuffer(s_mutable.size()));
-    RETURN_NOT_OK(stream->Decrypt(0, s_mutable, decrypted_data_key));
+    auto decrypted_data_key = std::make_unique<uint8_t[]>(s_mutable.size());
+    RETURN_NOT_OK(stream->Decrypt(0, s_mutable, decrypted_data_key.get()));
 
     // 6. Convert the resulting decrypted data key into encryption params.
     RETURN_NOT_OK(CheckSliceCanBeDecoded(
         s_mutable, encryption_params_pb_size, "encryption params"));
     auto encryption_params_pb = VERIFY_RESULT(pb_util::ParseFromSlice<EncryptionParamsPB>(
-        Slice(decrypted_data_key, encryption_params_pb_size)));
+        Slice(decrypted_data_key.get(), encryption_params_pb_size)));
     return EncryptionParams::FromEncryptionParamsPB(encryption_params_pb);
   }
 

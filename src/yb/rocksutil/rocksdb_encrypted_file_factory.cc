@@ -58,8 +58,8 @@ class EncryptedSequentialFile : public SequentialFileWrapper {
     if (!scratch) {
       return STATUS(InvalidArgument, "scratch argument is null.");
     }
-    uint8_t* buf = static_cast<uint8_t*>(EncryptionBuffer::Get()->GetBuffer(n));
-    RETURN_NOT_OK(SequentialFileWrapper::Read(n, result, buf));
+    auto buf = std::make_unique<uint8_t[]>(n);
+    RETURN_NOT_OK(SequentialFileWrapper::Read(n, result, buf.get()));
     RETURN_NOT_OK(stream_->Decrypt(offset_, *result, scratch));
     *result = Slice(scratch, result->size());
     offset_ += result->size();

@@ -183,7 +183,9 @@ __attribute__((unused)) void NO_THREAD_SAFETY_ANALYSIS LockingCallback(
 }
 
 __attribute__((unused)) void NO_THREAD_SAFETY_ANALYSIS ThreadId(CRYPTO_THREADID *tid) {
+#if !defined(CRYPTO_THREADID_set_numeric)
   CRYPTO_THREADID_set_numeric(tid, Thread::CurrentThreadId());
+#endif
 }
 
 class OpenSSLInitializer {
@@ -198,12 +200,16 @@ class OpenSSLInitializer {
       crypto_mutexes.emplace_back(std::make_unique<std::mutex>());
     }
     CRYPTO_set_locking_callback(&LockingCallback);
+#if !defined(CRYPTO_THREADID_set_callback)
     CRYPTO_THREADID_set_callback(&ThreadId);
+#endif
   }
 
   ~OpenSSLInitializer() {
     CRYPTO_set_locking_callback(nullptr);
+#if !defined(CRYPTO_THREADID_set_callback)
     CRYPTO_THREADID_set_callback(nullptr);
+#endif
     ERR_free_strings();
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
